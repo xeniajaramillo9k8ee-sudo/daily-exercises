@@ -1,0 +1,2 @@
+# daily-exercises
+Personal project.
